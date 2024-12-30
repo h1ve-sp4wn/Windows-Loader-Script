@@ -1,0 +1,20 @@
+# Use a Windows-based container (Server Core) to support Windows APIs
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+# Set the working directory inside the container
+WORKDIR /src
+
+# Copy the C++ source code into the container
+COPY windows_loader_script.cpp .
+
+# Install build tools (Visual Studio Build Tools, Windows SDK)
+RUN powershell -Command \
+    Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vs_installer.exe -OutFile vs_installer.exe; \
+    Start-Process -Wait -FilePath .\vs_installer.exe --args '--path cache', '--add', 'Microsoft.VisualStudio.Workload.NativeDesktop', '--quiet', '--wait'; \
+    Remove-Item -Force vs_installer.exe
+
+# Compile the C++ code using MSVC compiler
+RUN cl /EHsc /Fe:windows_loader_script.exe windows_loader_script.cpp
+
+# Command to execute the compiled executable
+CMD ["windows_loader_script.exe"]
